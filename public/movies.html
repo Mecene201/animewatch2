@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AnimeWatch – Movies</title>
+  <link rel="stylesheet" href="/styles.css"/>
+  <style>
+    .container.full-width {
+      max-width: none;
+      margin: 0;
+      padding: 1rem;
+    }
+    .show-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+      justify-items: center;
+    }
+    .show-card {
+      width: 100%;
+      max-width: 200px;
+      text-decoration: none;
+      color: inherit;
+      background: none !important;
+      border: none !important;
+      box-shadow: none !important;
+      display: flex;
+      flex-direction: column;
+    }
+    .show-card img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      display: block;
+      border: none !important;
+    }
+    .show-card .title {
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: center;
+      background: none !important;
+      padding: 0;
+    }
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: var(--surface);
+      padding: 2rem;
+      border-radius: 8px;
+      width: 90%; max-width: 400px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.7);
+      position: relative;
+    }
+    .modal-content .close {
+      position: absolute; right: 0.8rem; top: 0.6rem;
+      font-size: 1.2rem; cursor: pointer; color: var(--text);
+    }
+    .modal-content h2 {
+      margin-top: 0; color: var(--primary); text-align: center;
+    }
+    .modal-content form input {
+      width: 100%; margin-bottom: 1rem; padding: 0.75rem;
+      border: 1px solid var(--border); border-radius: 4px;
+      background: #2a2a2a; color: var(--text);
+    }
+    .modal-content form button {
+      width: 100%; padding: 0.75rem; background: var(--primary);
+      color: var(--text); border: none; border-radius: 4px;
+      font-size: 1rem; cursor: pointer;
+    }
+    .modal-content form button:hover { background: var(--accent); }
+    .modal-content p { text-align: center; margin: 0.5rem 0 0; }
+    .modal-content p a {
+      color: var(--primary); text-decoration: underline;
+    }
+    #loginMsg, #regMsg {
+      color: var(--primary);
+      text-align: center;
+      margin-top: 0.5rem;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header injection -->
+  <div id="site-header"></div>
+
+  <main class="container full-width">
+    <h1>Movies</h1>
+    <div id="movieGrid" class="show-grid"></div>
+  </main>
+
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-target="loginModal">&times;</span>
+      <h2>Log In</h2>
+      <form id="loginForm">
+        <input type="text"    id="loginUsername" placeholder="Username" required/>
+        <input type="password" id="loginPassword" placeholder="Password" required/>
+        <button type="submit">Log In</button>
+      </form>
+      <p id="loginMsg"></p>
+      <p>Don’t have an account? <a href="#" id="toRegister">Register</a></p>
+    </div>
+  </div>
+
+  <!-- REGISTER MODAL -->
+  <div id="registerModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-target="registerModal">&times;</span>
+      <h2>Register</h2>
+      <form id="registerForm">
+        <input type="text"    id="regUsername" placeholder="Username" required/>
+        <input type="email"   id="regEmail"    placeholder="Email"    required/>
+        <input type="password" id="regPassword" placeholder="Password" required/>
+        <input type="password" id="regConfirm"  placeholder="Confirm Password" required/>
+        <button type="submit">Sign Up</button>
+      </form>
+      <p id="regMsg"></p>
+      <p>Already have an account? <a href="#" id="toLogin">Log in</a></p>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/loadHeader.js" defer></script>
+  <script>
+    // ──────────────────────────────────────────────────────────────────────────
+    // Modal open/close handlers
+    // ──────────────────────────────────────────────────────────────────────────
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    document.getElementById('loginLink')?.addEventListener('click', e => {
+      e.preventDefault();
+      openModal('loginModal');
+    });
+    document.getElementById('registerLink')?.addEventListener('click', e => {
+      e.preventDefault();
+      openModal('registerModal');
+    });
+    document.querySelectorAll('.modal .close').forEach(btn => {
+      btn.onclick = () => closeModal(btn.dataset.target);
+    });
+    window.onclick = e => {
+      if (e.target.classList.contains('modal')) closeModal(e.target.id);
+    };
+    document.getElementById('toRegister').onclick = e => {
+      e.preventDefault();
+      closeModal('loginModal');
+      openModal('registerModal');
+    };
+    document.getElementById('toLogin').onclick = e => {
+      e.preventDefault();
+      closeModal('registerModal');
+      openModal('loginModal');
+    };
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Auth form handlers
+    // ──────────────────────────────────────────────────────────────────────────
+    document.getElementById('loginForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const u = document.getElementById('loginUsername').value.trim();
+      const p = document.getElementById('loginPassword').value;
+      const msg = document.getElementById('loginMsg');
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username: u, password: p })
+      });
+      const d = await res.json();
+      msg.innerText = d.message;
+      if (res.ok) {
+        closeModal('loginModal');
+        location.reload();
+      }
+    };
+
+    document.getElementById('registerForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const u   = document.getElementById('regUsername').value.trim();
+      const em  = document.getElementById('regEmail').value.trim();
+      const p   = document.getElementById('regPassword').value;
+      const c   = document.getElementById('regConfirm').value;
+      const msg = document.getElementById('regMsg');
+      if (p !== c) {
+        msg.innerText = 'Passwords must match';
+        return;
+      }
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username: u, email: em, password: p })
+      });
+      const d = await res.json();
+      msg.innerText = d.message;
+      if (res.ok) {
+        closeModal('registerModal');
+        location.reload();
+      }
+    };
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Load all shows from API
+    // ──────────────────────────────────────────────────────────────────────────
+    async function loadAllShows() {
+      const r = await fetch('/api/anime');
+      return r.ok ? r.json() : [];
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Helpers for filter state
+    // ──────────────────────────────────────────────────────────────────────────
+    function getSelectedGenre() {
+      const dropdown = document.getElementById('genreFilterDropdown');
+      return dropdown ? dropdown.value : '';
+    }
+    function getRlOnlyFlag() {
+      return localStorage.getItem('rlOnly') === 'true';
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Render a list of shows into a grid container
+    // ──────────────────────────────────────────────────────────────────────────
+    function renderGrid(shows, containerId) {
+      document.getElementById(containerId).innerHTML = shows.map(s => `
+        <a class="show-card" href="/show.html?showId=${s.id}">
+          <img src="${s.thumbnail}" alt="${s.title}">
+          <div class="title">${s.title}</div>
+        </a>
+      `).join('');
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Refresh the Movies grid:
+    //   • Keep only s.type==="Movie"
+    //   • Read selected genre from dropdown (not URL)
+    //   • If rlOnly===true in localStorage, filter by "*RL"
+    // ──────────────────────────────────────────────────────────────────────────
+    async function refreshGrid() {
+      // 1) Read selected genre from the dropdown
+      const requestedGenre = getSelectedGenre();
+
+      // 2) Determine rlOnly state
+      const rlOnly = getRlOnlyFlag();
+
+      // 3) Fetch all shows
+      const all = await loadAllShows();
+      // If the endpoint returns { shows: [...] }, unwrap it
+      const allShows = Array.isArray(all) ? all : all.shows || [];
+
+      // 4) Keep only type==="Movie"
+      let filtered = allShows.filter(s => s.type === 'Movie');
+
+      // 5) If requestedGenre, further filter by s.genre.includes(requestedGenre)
+      if (requestedGenre) {
+        filtered = filtered.filter(s =>
+          Array.isArray(s.genre) && s.genre.includes(requestedGenre)
+        );
+      }
+
+      // 6) If rlOnly===true, further keep only those whose genre includes "*RL"
+      if (rlOnly) {
+        filtered = filtered.filter(s =>
+          Array.isArray(s.genre) && s.genre.includes('*RL')
+        );
+      }
+
+      // 7) Render into movie grid
+      renderGrid(filtered, 'movieGrid');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1) First inject header (with “Anime?” switch + genre dropdown)…
+      buildHeader().then(() => {
+        // 2) Hook “Anime?” toggle so that changing it re-runs refreshGrid()
+        const toggle = document.getElementById('rlToggle');
+        if (toggle) {
+          toggle.addEventListener('change', () => {
+            refreshGrid().catch(e => console.error('refreshGrid error', e));
+          });
+        }
+
+        // 3) Listen for filterChanged (genre “Apply” button)
+        window.addEventListener('filterChanged', () => {
+          refreshGrid().catch(e => console.error('refreshGrid error', e));
+        });
+      }).catch(() => { /* buildHeader failure is unlikely */ });
+
+      // 4) Finally, draw the grid for the first time
+      refreshGrid().catch(e => console.error('refreshGrid error', e));
+    });
+  </script>
+  <footer class="site-footer">
+  <p>© 2025 AnimeWatch. All rights reserved.</p>
+</footer>
+</body>
+</html>
+
+
+
+
+
+
+
+

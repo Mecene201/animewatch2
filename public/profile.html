@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AnimeWatch – Edit Profile</title>
+  <link rel="stylesheet" href="/styles.css"/>
+  <style>
+    :root {
+      --bg-surface: #1e1e1e;
+      --bg-page:    #121212;
+      --text:       #ffffff;
+      --primary:    #e53935;
+      --accent:     #b71c1c;
+      --border:     #660000;
+    }
+    body {
+      background: var(--bg-page);
+      color: var(--text);
+      margin: 0;
+      font-family: sans-serif;
+    }
+    .profile-page {
+      display: flex;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .profile-container {
+      background: var(--bg-surface);
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 600px;
+      width: 100%;
+    }
+    h1 { color: var(--primary); margin-top: 0; }
+    .coin-balance {
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+    .current-avatar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .current-avatar img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      object-fit: cover;
+    }
+    #avatarGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px,1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .avatar-wrapper {
+      text-align: center;
+    }
+    .avatar-wrapper img {
+      width: 80px; height: 80px; object-fit: cover;
+      border-radius: 50%; cursor: pointer;
+      border: 3px solid transparent;
+      transition: border-color .2s, opacity .2s;
+    }
+    .avatar-wrapper img.selectable:hover {
+      border-color: var(--accent);
+    }
+    .avatar-wrapper img.selectable.selected {
+      border-color: var(--primary);
+    }
+    .avatar-wrapper img.locked {
+      opacity: .6; cursor: default;
+    }
+    .avatar-wrapper button {
+      margin-top: 4px; width: 100%; padding: 4px;
+      font-size: .85rem; background: var(--primary);
+      border: none; border-radius: 4px; color: var(--text);
+      cursor: pointer;
+    }
+    .avatar-wrapper button:disabled {
+      opacity: .5; cursor: not-allowed;
+    }
+    #saveAvatarBtn {
+      width: 100%; padding: .75rem;
+      background: var(--primary); color: var(--text);
+      border: none; border-radius: 4px; font-size: 1rem;
+      cursor: pointer;
+    }
+    #saveAvatarBtn:disabled {
+      opacity: .5; cursor: not-allowed;
+    }
+    #saveMsg { margin-top:1rem; text-align:center; }
+
+    /* Modal */
+    .modal { display:none; position:fixed; z-index:1000;
+      left:0; top:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.6); justify-content:center; align-items:center;
+    }
+    .modal.active { display:flex; }
+    .modal-content {
+      background: var(--bg-surface); padding:2rem; border-radius:8px;
+      width:90%; max-width:400px; position:relative;
+    }
+    .modal-content .close {
+      position:absolute; right:.8rem; top:.6rem;
+      font-size:1.2rem; cursor:pointer; color:var(--text);
+    }
+    .modal-content h2 { margin-top:0; color:var(--primary); text-align:center; }
+    .modal-content form input,
+    .modal-content form button {
+      width:100%; margin-bottom:1rem; padding:.75rem; border-radius:4px;
+    }
+    .modal-content form input {
+      border:1px solid var(--border); background:#2a2a2a; color:var(--text);
+    }
+    .modal-content form button {
+      background:var(--primary); color:var(--text); border:none; cursor:pointer;
+    }
+    .modal-content form button:hover { background:var(--accent); }
+    .modal-content p { text-align:center; margin:.5rem 0 0; }
+    .modal-content p a { color:var(--primary); text-decoration:underline; }
+    #loginMsg,#regMsg { color:var(--primary); text-align:center; min-height:1.2em; }
+  </style>
+</head>
+<body>
+
+  <!-- 1) Shared header -->
+  <div id="site-header"></div>
+  <script src="/loadHeader.js" defer></script>
+
+  <!-- 2) Profile editor -->
+  <div class="profile-page">
+    <div class="profile-container">
+      <h1>Edit Profile</h1>
+      <div class="coin-balance">
+        Your coins: <span id="coinCount">0</span>
+      </div>
+      <div class="current-avatar">
+        <strong>Your current avatar:</strong>
+        <img id="currentAvatar" alt="Current avatar">
+      </div>
+
+      <h2>Select a new avatar</h2>
+      <div id="avatarGrid"></div>
+      <button id="saveAvatarBtn" disabled>Save New Avatar</button>
+      <p id="saveMsg"></p>
+    </div>
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-target="loginModal">&times;</span>
+      <h2>Log In</h2>
+      <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Username" required/>
+        <input type="password" id="loginPassword" placeholder="Password" required/>
+        <button type="submit">Log In</button>
+      </form>
+      <p id="loginMsg"></p>
+      <p>Don’t have an account? <a href="#" id="toRegister">Register</a></p>
+    </div>
+  </div>
+
+  <!-- REGISTER MODAL -->
+  <div id="registerModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-target="registerModal">&times;</span>
+      <h2>Register</h2>
+      <form id="registerForm">
+        <input type="text" id="regUsername" placeholder="Username" required/>
+        <input type="password" id="regPassword" placeholder="Password" required/>
+        <input type="password" id="regConfirm" placeholder="Confirm Password" required/>
+        <button type="submit">Sign Up</button>
+      </form>
+      <p id="regMsg"></p>
+      <p>Already have an account? <a href="#" id="toLogin">Log in</a></p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const DEFAULT_AVATAR =
+        'https://raw.githubusercontent.com/Mecene201/moviesitethumbnails/main/naruto%20chibi.jpg';
+
+      const currentImg = document.getElementById('currentAvatar');
+      const grid       = document.getElementById('avatarGrid');
+      const saveBtn    = document.getElementById('saveAvatarBtn');
+      const saveMsg    = document.getElementById('saveMsg');
+      const coinCount  = document.getElementById('coinCount');
+      let selectedUrl  = null;
+
+      // 1) Fetch user & balance
+      let user = null;
+      try {
+        const meRes = await fetch('/api/auth/me');
+        if (meRes.ok) {
+          user = (await meRes.json()).user;
+          coinCount.innerText = user.coins;
+        }
+      } catch {}
+
+      // 2) Show current avatar (or default)
+      const currentUrl = user?.pictureUrl || DEFAULT_AVATAR;
+      currentImg.src   = currentUrl;
+      currentImg.onerror = () => currentImg.src = DEFAULT_AVATAR;
+
+      // 3) Fetch avatars
+      let avatars = [];
+      try {
+        const avRes = await fetch('/api/avatars');
+        if (avRes.ok) avatars = (await avRes.json()).avatars;
+      } catch {}
+
+      // 4) Render grid
+      avatars.forEach(a => {
+        const wrap = document.createElement('div');
+        wrap.className = 'avatar-wrapper';
+
+        const img = document.createElement('img');
+        img.src = a.url;
+        img.onerror = () => img.src = DEFAULT_AVATAR;
+
+        const freeOrOwned = a.cost === 0 || a.isOwned;
+        if (freeOrOwned) {
+          img.classList.add('selectable');
+          if (a.url === currentUrl) {
+            img.classList.add('selected');
+            selectedUrl = a.url;
+            saveBtn.disabled = false;
+          }
+          img.onclick = () => {
+            grid.querySelectorAll('img').forEach(i => i.classList.remove('selected'));
+            img.classList.add('selected');
+            selectedUrl = a.url;
+            saveBtn.disabled = false;
+          };
+        } else {
+          img.classList.add('locked');
+        }
+        wrap.appendChild(img);
+
+        if (!freeOrOwned) {
+          const btn = document.createElement('button');
+          btn.textContent = `Buy for ${a.cost} coins`;
+          btn.disabled = (user?.coins ?? 0) < a.cost;
+          btn.onclick = async () => {
+            const resp = await fetch('/api/avatars/purchase', {
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ avatarId: a.id })
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+              coinCount.innerText = data.newCoins;
+              img.classList.remove('locked');
+              img.classList.add('selectable');
+              btn.remove();
+              img.onclick = () => {
+                grid.querySelectorAll('img').forEach(i=>i.classList.remove('selected'));
+                img.classList.add('selected');
+                selectedUrl = a.url;
+                saveBtn.disabled = false;
+              };
+            } else {
+              alert(data.message);
+            }
+          };
+          wrap.appendChild(btn);
+        }
+
+        grid.appendChild(wrap);
+      });
+
+      // 5) Save handler
+      saveBtn.addEventListener('click', async () => {
+        if (!selectedUrl) return;
+        saveBtn.disabled = true;
+        saveMsg.textContent = 'Saving…';
+        try {
+          const r = await fetch('/api/auth/profile-picture', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ pictureUrl: selectedUrl })
+          });
+          const d = await r.json();
+          if (r.ok) {
+            currentImg.src = selectedUrl;
+            saveMsg.textContent = 'Avatar updated!';
+          } else {
+            saveMsg.textContent = d.message || 'Error';
+          }
+        } catch {
+          saveMsg.textContent = 'Network error';
+        }
+        setTimeout(() => saveMsg.textContent = '', 3000);
+      });
+
+      // 6) Modal & auth handlers
+      function openModal(id){document.getElementById(id).classList.add('active')}
+      function closeModal(id){document.getElementById(id).classList.remove('active')}
+      document.addEventListener('click', e => {
+        if (e.target.matches('#loginLink')) { e.preventDefault(); openModal('loginModal'); }
+        if (e.target.matches('#registerLink')) { e.preventDefault(); openModal('registerModal'); }
+        if (e.target.classList.contains('close')) closeModal(e.target.dataset.target);
+        if (e.target.classList.contains('modal')) closeModal(e.target.id);
+      });
+      document.getElementById('loginForm').onsubmit = async e => {
+        e.preventDefault();
+        const u = document.getElementById('loginUsername').value.trim();
+        const p = document.getElementById('loginPassword').value;
+        const msg = document.getElementById('loginMsg');
+        const res = await fetch('/api/auth/login',{method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({username:u,password:p})
+        });
+        const d = await res.json(); msg.innerText = d.message;
+        if (res.ok) location.reload();
+      };
+      document.getElementById('registerForm').onsubmit = async e => {
+        e.preventDefault();
+        const u = document.getElementById('regUsername').value.trim();
+        const p = document.getElementById('regPassword').value;
+        const c = document.getElementById('regConfirm').value;
+        const msg = document.getElementById('regMsg');
+        if (p!==c) return msg.innerText='Passwords must match';
+        const res = await fetch('/api/auth/register',{method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({username:u,password:p})
+        });
+        const d = await res.json(); msg.innerText = d.message;
+        if (res.ok) location.reload();
+      };
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

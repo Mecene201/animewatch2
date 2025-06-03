@@ -1,0 +1,8 @@
+<div id="modal-container"></div>
+<script>
+  fetch('/partials/modals.html')
+    .then(r => r.text())
+    .then(html => document.getElementById('modal-container').innerHTML = html);
+</script>
+<script src="/loadHeader.js" defer></script>
+<script src="/auth.js"       defer></script>

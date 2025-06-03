@@ -1,0 +1,200 @@
+// routes/auth.js
+
+require('dotenv').config();
+const express    = require('express');
+const bcrypt     = require('bcrypt');
+const sqlite3    = require('sqlite3').verbose();
+const path       = require('path');
+const crypto     = require('crypto');
+const nodemailer = require('nodemailer');
+
+const router = express.Router();
+
+// Open your SQLite database
+const db = new sqlite3.Database(
+  path.join(__dirname, '..', 'data', 'anime.db'),
+  err => { if (err) console.error('❌ Could not open DB:', err); }
+);
+
+// Configure Nodemailer to use Gmail SMTP (free)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
+
+// Helper to send a verification email
+function sendVerificationEmail(to, token) {
+  const verifyUrl = `https://yourdomain.com/api/auth/verify?token=${token}`;
+  const html = `
+    <p>Thanks for signing up! Verify your email by clicking below:</p>
+    <p><a href="${verifyUrl}">${verifyUrl}</a></p>
+    <p>This link expires in 24 hours.</p>
+  `;
+  transporter.sendMail({
+    from:    process.env.FROM_EMAIL,
+    to,
+    subject: 'Verify your AnimeWatch account',
+    html
+  }, (err, info) => {
+    if (err) console.error('❌ Email error:', err);
+    else      console.log('✅ Verification email sent:', info.response);
+  });
+}
+
+// Helper to shape session user object
+function createSessionUser(row) {
+  return {
+    id:       row.id,
+    username: row.username,
+    isAdmin:  !!row.isAdmin,
+    coins:    row.coins
+  };
+}
+
+// ─── REGISTER (no auto-login) ───────────────────────────────────────────
+router.post('/register', async (req, res) => {
+  const { username, email, password } = req.body;
+  if (!username || !email || !password) {
+    return res
+      .status(400)
+      .json({ message: 'Username, email and password required.' });
+  }
+
+  try {
+    const hash    = await bcrypt.hash(password, 10);
+    const token   = crypto.randomBytes(20).toString('hex');
+    const expires = Date.now() + 24*60*60*1000; // 24h from now
+
+    db.run(
+      `INSERT INTO users
+         (username, email, password, verifyToken, verifyExpires)
+       VALUES (?, ?, ?, ?, ?)`,
+      [username, email, hash, token, expires],
+      function(err) {
+        if (err) {
+          return res.status(400).json({ message: err.message });
+        }
+        // Send verification email
+        sendVerificationEmail(email, token);
+        // Respond without creating a session
+        res.json({
+          message:
+            'Registered! Please check your email for a verification link before logging in.'
+        });
+      }
+    );
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error during registration.' });
+  }
+});
+
+// ─── VERIFY EMAIL ───────────────────────────────────────────────────────
+router.get('/verify', (req, res) => {
+  const token = req.query.token;
+  if (!token) {
+    return res.status(400).send('Missing token.');
+  }
+
+  db.get(
+    `SELECT id, verifyExpires FROM users WHERE verifyToken = ?`,
+    [token],
+    (err, row) => {
+      if (err)       return res.status(500).send('Server error.');
+      if (!row)      return res.status(400).send('Invalid token.');
+      if (Date.now() > row.verifyExpires) {
+        return res.status(400).send('Token expired.');
+      }
+
+      db.run(
+        `UPDATE users
+            SET isVerified    = 1,
+                verifyToken   = NULL,
+                verifyExpires = NULL
+          WHERE id = ?`,
+        [row.id],
+        err2 => {
+          if (err2) return res.status(500).send('Could not verify.');
+          // Redirect back to login with success flag
+          res.redirect('/login.html?verified=1');
+        }
+      );
+    }
+  );
+});
+
+// ─── LOGIN ───────────────────────────────────────────────────────────────
+router.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  db.get(
+    `SELECT * FROM users WHERE username = ?`,
+    [username],
+    async (err, row) => {
+      if (err || !row) {
+        return res.status(401).json({ message: 'Bad creds' });
+      }
+      const ok = await bcrypt.compare(password, row.password);
+      if (!ok) {
+        return res.status(401).json({ message: 'Bad creds' });
+      }
+      if (row.isVerified === 0) {
+        return res
+          .status(403)
+          .json({ message: 'Please verify your email before logging in.' });
+      }
+      // Now that they’re verified, create the session
+      req.session.user = createSessionUser(row);
+      res.json({ message: 'Login successful', user: req.session.user });
+    }
+  );
+});
+
+// ─── RESEND VERIFICATION LINK ───────────────────────────────────────────
+router.post('/resend', (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required.' });
+  }
+
+  db.get(
+    `SELECT id FROM users WHERE email = ? AND isVerified = 0`,
+    [email],
+    (err, row) => {
+      if (err) return res.status(500).json({ message: 'Server error.' });
+      if (!row) {
+        return res
+          .status(400)
+          .json({ message: 'No unverified account found for that email.' });
+      }
+
+      const token   = crypto.randomBytes(20).toString('hex');
+      const expires = Date.now() + 24*60*60*1000;
+
+      db.run(
+        `UPDATE users
+            SET verifyToken   = ?,
+                verifyExpires = ?
+          WHERE id = ?`,
+        [token, expires, row.id],
+        err2 => {
+          if (err2) return res.status(500).json({ message: 'Could not update token.' });
+          sendVerificationEmail(email, token);
+          res.json({ message: 'A new verification link has been sent to your email.' });
+        }
+      );
+    }
+  );
+});
+
+// ─── WHO-AM-I & LOGOUT ───────────────────────────────────────────────────
+router.get('/me', (req, res) => {
+  res.json({ user: req.session.user || null });
+});
+router.post('/logout', (req, res) => {
+  req.session.destroy(() => res.json({ message: 'Logged out' }));
+});
+
+module.exports = router;

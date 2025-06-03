@@ -1,0 +1,101 @@
+<!-- public/header.html -->
+<div class="container" id="site-header">
+  <div class="header-left">
+    <a href="/" class="logo">
+      <img src="/assets/images/animewatch.png" alt="AnimeWatch Logo" class="site-logo" />
+      <span class="logo-text">AnimeWatch</span>
+    </a>
+  </div>
+
+  <nav class="header-nav">
+    <a href="/" id="homeLink">Home</a>
+    <a href="/tv-shows.html">TV Shows</a>
+    <a href="/movies.html">Movies</a>
+    <!-- Authentication Links -->
+    <a href="#" id="loginLink">Log In</a>
+    <a href="#" id="registerLink">Register</a>
+
+    <!-- ─── GENRE FILTER DROPDOWN ─────────────────────────────────────────── -->
+    <div id="genreFilterContainer" style="display: inline-flex; align-items: center; margin-left: 1rem;">
+      <select id="genreFilterDropdown"
+              style="
+                background: #1e1e1e;
+                color: #fff;
+                border: 1px solid #444;
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-size: 0.9rem;
+                cursor: pointer;
+                min-width: 120px;
+              ">
+        <option value="">All Genres</option>
+        <!-- More <option> tags will be inserted dynamically via JavaScript -->
+      </select>
+      <button id="applyGenreFilter"
+              style="
+                background: #e53935;
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                padding: 5px 10px;
+                font-size: 0.9rem;
+                margin-left: 0.5rem;
+                cursor: pointer;
+                transition: background 0.2s ease;
+              ">
+        Apply
+      </button>
+    </div>
+  </nav>
+</div>
+
+<!-- ────────────────────────────────────────────────────────────────────────────── -->
+<!-- Inline script to populate and wire up the “Filter by Genre” dropdown:     -->
+<!-- Be sure to include this <script> block _after_ your header.html is inserted  -->
+<!-- (e.g., if you use <script src="/loadHeader.js" defer>, place this in index.html, -->
+<!--  just after loadHeader.js runs).                                            -->
+<!-- ────────────────────────────────────────────────────────────────────────────── -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1) Find our newly added dropdown and button
+    const dropdown = document.getElementById('genreFilterDropdown');
+    const applyBtn = document.getElementById('applyGenreFilter');
+
+    // 2) Fetch all genres from /api/admin/genres and populate the <select>
+    fetch('/api/admin/genres')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load genres');
+        return res.json();
+      })
+      .then(genres => {
+        // genres should be an array of strings, e.g. ["Action","Drama", ...]
+        genres.forEach(g => {
+          const opt = document.createElement('option');
+          opt.value = g;
+          opt.textContent = g;
+          dropdown.appendChild(opt);
+        });
+
+        // 3) If URL already contains ?genre=X, pre-select that
+        const params = new URLSearchParams(window.location.search);
+        const requested = params.get('genre') || '';
+        if (requested) {
+          dropdown.value = requested;
+        }
+      })
+      .catch(err => {
+        console.warn('Could not populate genre dropdown:', err);
+      });
+
+    // 4) When “Apply” is clicked, reload as index.html?genre=<selected>
+    applyBtn.addEventListener('click', () => {
+      const selected = dropdown.value;
+      if (selected) {
+        window.location.href = `index.html?genre=${encodeURIComponent(selected)}`;
+      } else {
+        // “All Genres” chosen
+        window.location.href = 'index.html';
+      }
+    });
+  });
+</script>

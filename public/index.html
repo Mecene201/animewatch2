@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AnimeWatch – Home</title>
+
+  <!-- ─── FAVICON ─────────────────────────────────────────────────── -->
+  <link
+    rel="icon"
+    type="image/png"
+    href="https://raw.githubusercontent.com/Mecene201/herobanner/main/awlogo.png"
+  />
+
+  <link rel="stylesheet" href="/styles.css"/>
+  <style>
+    :root {
+      --surface:     #1e1e1e;
+      --page-bg:     #121212;
+      --text:        #ffffff;
+      --primary:     #e53935;
+      --accent:      #b71c1c;
+      --border:      #660000;
+      --rank-color:  #ff79c6;
+    }
+    body {
+      margin: 0;
+      background: var(--page-bg);
+      color: var(--text);
+      font-family: sans-serif;
+      padding-top: 4rem; /* space for fixed header */
+    }
+    /* ─── Fixed Transparent Header ───────────────────────────────────────────── */
+    #site-header {
+      position: fixed; top: 0; left: 0; width: 100%;
+      background: none !important; z-index: 1000;
+    }
+    #site-header > * { background: transparent !important; }
+    #site-header::before {
+      content: '';
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.8) 0%,
+        rgba(0,0,0,0.2) 60%,
+        rgba(0,0,0,0)   100%
+      );
+      z-index: -1;
+    }
+
+    /* ─── STATIC CENTERED TICKER ─────────────────────────────────────────────── */
+    #topTicker {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      background: var(--primary);
+      color: #fff;
+      height: 2rem;
+      box-sizing: border-box;
+      font-size: 0.9rem;
+      line-height: 2rem;
+      z-index: 999; /* ensure it sits just below the header */
+    }
+    #topTicker a, #topTicker span {
+      color: #fff;
+      text-decoration: none;
+      padding: 0 1rem;
+    }
+
+    /* ─── Hero Section ───────────────────────────────────────────────────────── */
+    #heroSection {
+      position: relative;
+      width: 100%; height: 60vh;
+      background-color: var(--page-bg);
+      overflow: hidden;
+      margin-bottom: 2rem;
+      visibility: hidden; /* hide until first slide is set */
+    }
+    .hero-slider {
+      display: flex;
+      width: 100%; height: 100%;
+      transition: transform 0.8s ease;
+    }
+    .hero-slide {
+      flex: 0 0 100%;
+      background-size: cover;
+      background-position: right center;
+      background-repeat: no-repeat;
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      pointer-events: none; z-index: 1;
+      background:
+        linear-gradient(to right, rgba(18,18,18,1) 0%, rgba(18,18,18,0) 90%),
+        radial-gradient(circle farthest-corner at center, rgba(18,18,18,0) 40%, rgba(18,18,18,1) 100%);
+    }
+    .hero-content {
+      position: absolute; top: 0; left: 0;
+      display: flex; align-items: center;
+      height: 100%; padding: 0 2rem; z-index: 2;
+    }
+    .hero-text { max-width: 50%; text-align: left; }
+    .hero-text h1 {
+      font-size: 3rem; margin-bottom: .5rem;
+    }
+    .hero-desc {
+      font-size: 1.1rem; line-height: 1.4; margin-bottom: 1.25rem;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3; /* vendor */
+      line-clamp: 3;          /* standard */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-height: calc(1.4em * 3);
+    }
+    .btn-watch {
+      display: inline-block; padding: .75rem 1.5rem;
+      background: var(--primary); color: #fff;
+      border-radius: 4px; text-decoration: none;
+      font-weight: bold; transition: background .2s ease;
+    }
+    .btn-watch:hover { background: var(--accent); }
+
+    .hero-nav-container {
+      position: absolute; bottom: 1rem; right: 1rem;
+      display: flex; gap: .5rem; z-index: 3;
+    }
+    .hero-nav-btn {
+      background: var(--primary); border: none;
+      color: #fff; width: 2.5rem; height: 2.5rem;
+      border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; opacity: .85;
+      transition: background .2s ease, opacity .2s ease;
+    }
+    .hero-nav-btn:hover { background: var(--accent); opacity: 1; }
+
+    /* ─── Show Grid ───────────────────────────────────────────────────────────── */
+    .container.full-width {
+      max-width: none; margin: 0; padding: 1rem;
+    }
+    .show-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 1rem;
+      margin: 1rem 0;
+      justify-items: center;
+      visibility: hidden; /* hide until JS renders */
+    }
+    .show-card {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      background: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .show-card img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+    }
+    .show-card .title {
+      margin-top: .5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: center;
+      color: #eee;
+    }
+
+    /* ─── Modals ─────────────────────────────────────────────────────────────── */
+    .modal {
+      display: none; position: fixed; z-index: 1000;
+      inset: 0; background: rgba(0,0,0,0.6);
+      justify-content: center; align-items: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: var(--surface); padding: 2rem; border-radius: 8px;
+      width: 90%; max-width: 400px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.7);
+      position: relative;
+    }
+    .modal-content .close {
+      position: absolute; right: .8rem; top: .6rem;
+      font-size: 1.2rem; cursor: pointer; color: var(--text);
+    }
+    .modal-content h2 {
+      margin-top: 0; color: var(--primary); text-align: center;
+    }
+    .modal-content form input {
+      width: 100%; margin-bottom: 1rem; padding: .75rem;
+      border: 1px solid var(--border); border-radius: 4px;
+      background: #2a2a2a; color: var(--text);
+    }
+    .modal-content form button {
+      width: 100%; padding: .75rem;
+      background: var(--primary); color: var(--text);
+      border: none; border-radius: 4px; cursor: pointer;
+    }
+    .modal-content form button:hover {
+      background: var(--accent);
+    }
+    #loginMsg, #regMsg {
+      color: var(--primary); text-align: center;
+      margin-top: .5rem; min-height: 1.2em;
+    }
+
+    @media (max-width: 1280px) {
+      .show-grid { grid-template-columns: repeat(6, 1fr); }
+    }
+    @media (max-width: 1024px) {
+      .show-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .show-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div id="site-header"></div>
+
+  <!-- ─── STATIC CENTERED TICKER ───────────────────────────────────────────────── -->
+  <div id="topTicker">
+    <span id="ticker-text">Loading…</span>
+  </div>
+
+  <!-- Hero / Spotlight -->
+  <section id="heroSection">
+    <div class="hero-slider"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 id="heroTitle"></h1>
+        <p id="heroDescription" class="hero-desc"></p>
+        <a id="heroButton" href="#" class="btn-watch">Watch Now</a>
+      </div>
+    </div>
+    <div class="hero-nav-container">
+      <button id="heroPrev" class="hero-nav-btn">‹</button>
+      <button id="heroNext" class="hero-nav-btn">›</button>
+    </div>
+  </section>
+
+  <!-- Combined show grid -->
+  <main class="container full-width">
+    <div id="showGrid" class="show-grid"></div>
+  </main>
+
+  <!-- LOGIN Modal -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-target="loginModal">&times;</span>
+      <h2>Log In</h2>
+      <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Username" required/>
+        <input type="password" id="loginPassword" placeholder="Password" required/>
+        <button type="submit">Log In</button>
+      </form>
+      <p id="loginMsg"></p>
+      <p>Don’t have an account? <a href="#" id="toRegister">Register</a></p>
+    </div>
+  </div>
+
+  <!-- REGISTER Modal -->
+  <div id="registerModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-target="registerModal">&times;</span>
+      <h2>Register</h2>
+      <form id="registerForm">
+        <input type="text"    id="regUsername" placeholder="Username" required/>
+        <input type="email"   id="regEmail"    placeholder="Email"    required/>
+        <input type="password" id="regPassword" placeholder="Password" required/>
+        <input type="password" id="regConfirm"  placeholder="Confirm Password" required/>
+        <button type="submit">Sign Up</button>
+      </form>
+      <p id="regMsg"></p>
+      <p>Already have an account? <a href="#" id="toLogin">Log in</a></p>
+    </div>
+  </div>
+
+  <script src="/loadHeader.js" defer></script>
+  <script>
+    console.log('Index page loaded, starting scripts…');
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Load Ticker Text (static, centered)
+    // ──────────────────────────────────────────────────────────────────────────
+    async function loadTickerText() {
+      try {
+        const res = await fetch('/api/ticker');
+        const data = await res.json();
+        const items = data.ticker || [];
+        const container = document.getElementById('topTicker');
+        const textEl = document.getElementById('ticker-text');
+
+        if (!items.length) {
+          container.style.display = 'none';
+          return;
+        }
+        // For simplicity, show only the most recent message (items[0])
+        const latest = items[0];
+        if (latest.link) {
+          textEl.innerHTML = `<a href="${latest.link}" target="_blank" rel="noopener">${latest.message}</a>`;
+        } else {
+          textEl.textContent = latest.message;
+        }
+      } catch (err) {
+        console.error('Error loading ticker text:', err);
+        document.getElementById('topTicker').style.display = 'none';
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Hero Slider Logic
+    // ──────────────────────────────────────────────────────────────────────────
+    async function loadHero() {
+      const heroSection = document.getElementById('heroSection');
+      const slider      = document.querySelector('.hero-slider');
+      const titleEl     = document.getElementById('heroTitle');
+      const descEl      = document.getElementById('heroDescription');
+      const btnEl       = document.getElementById('heroButton');
+      const prevBtn     = document.getElementById('heroPrev');
+      const nextBtn     = document.getElementById('heroNext');
+
+      // 1) Fetch and pick featured
+      const all = await fetch('/api/anime').then(r => r.ok ? r.json() : []).catch(() => []);
+      let featured = all.filter(a => a.featured);
+      if (!featured.length) featured = all.slice(0, 5);
+
+      // 2) Build slide data
+      const slides = await Promise.all(featured.map(async a => {
+        try {
+          const detail = await fetch(`/api/anime/${a.id}`).then(r => r.json());
+          const show   = detail.show || detail;
+          return {
+            id: show.id,
+            title: show.title,
+            description: show.description || '',
+            image_url: show.bannerUrl || show.thumbnail || a.thumbnail
+          };
+        } catch {
+          return {
+            id: a.id,
+            title: a.title,
+            description: '',
+            image_url: a.thumbnail
+          };
+        }
+      }));
+
+      // 3) Inject slide DOM
+      slider.innerHTML = slides.map(s =>
+        `<div class="hero-slide" style="background-image:url('${s.image_url}')"></div>`
+      ).join('');
+
+      // 4) Clone for loop
+      let idx = slides.length > 1 ? 1 : 0;
+      if (slides.length > 1) {
+        const children = Array.from(slider.children);
+        slider.insertBefore(children[children.length - 1].cloneNode(true), slider.firstChild);
+        slider.appendChild(children[0].cloneNode(true));
+      }
+
+      // 5) Jump to starting position
+      slider.style.transition = 'none';
+      slider.style.transform = `translateX(-${idx * 100}%)`;
+
+      // 6) Render first slide instantly
+      const firstReal = slides.length > 1 ? 0 : idx;
+      const s0 = slides[firstReal];
+      titleEl.textContent = s0.title;
+      descEl.textContent  = s0.description;
+      btnEl.href          = `/show.html?showId=${s0.id}`;
+      heroSection.style.visibility = 'visible';
+
+      setTimeout(() => {
+        slider.style.transition = 'transform 0.8s ease';
+        let isMoving = false;
+        let interval = setInterval(() => advance(idx + 1), 3000);
+
+        function advance(newIdx) {
+          if (isMoving) return;
+          isMoving = true;
+          idx = newIdx;
+          slider.style.transform = `translateX(-${idx * 100}%)`;
+        }
+
+        slider.addEventListener('transitionend', () => {
+          isMoving = false;
+          const real = slides.length > 1
+            ? (idx - 1 + slides.length) % slides.length
+            : idx;
+          const s = slides[real];
+          titleEl.textContent = s.title;
+          descEl.textContent  = s.description;
+          btnEl.href          = `/show.html?showId=${s.id}`;
+
+          // wrap-around
+          if (idx === 0) {
+            slider.style.transition = 'none';
+            idx = slides.length;
+            slider.style.transform = `translateX(-${idx * 100}%)`;
+            slider.offsetHeight; // force repaint
+            slider.style.transition = 'transform 0.8s ease';
+          } else if (idx === slides.length + 1) {
+            slider.style.transition = 'none';
+            idx = 1;
+            slider.style.transform = `translateX(-${idx * 100}%)`;
+            slider.offsetHeight; // force repaint
+            slider.style.transition = 'transform 0.8s ease';
+          }
+        });
+
+        prevBtn.onclick = () => {
+          clearInterval(interval);
+          advance(idx - 1);
+          interval = setInterval(() => advance(idx + 1), 3000);
+        };
+        nextBtn.onclick = () => {
+          clearInterval(interval);
+          advance(idx + 1);
+          interval = setInterval(() => advance(idx + 1), 3000);
+        };
+      }, 50);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Helpers for filter state
+    // ──────────────────────────────────────────────────────────────────────────
+    function getSelectedGenre() {
+      const dropdown = document.getElementById('genreFilterDropdown');
+      return dropdown ? dropdown.value : '';
+    }
+    function getRlOnlyFlag() {
+      return localStorage.getItem('rlOnly') === 'true';
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Refresh the combined show grid:
+    //   • If a genre is selected, filter by that genre
+    //   • If rlOnly===true in localStorage, filter by "*RL"
+    //   • Show all otherwise
+    // ──────────────────────────────────────────────────────────────────────────
+    async function refreshGrid() {
+      console.log('refreshGrid() start');
+
+      // 1) Read selected genre (if any)
+      const requestedGenre = getSelectedGenre();
+
+      // 2) Determine rlOnly state
+      const rlOnly = getRlOnlyFlag();
+
+      // 3) Fetch all shows
+      const shows = await fetch('/api/anime')
+        .then(r => r.ok ? r.json() : [])
+        .catch(() => []);
+
+      // 4) Prepare array of shows
+      let allShows = Array.isArray(shows)
+        ? shows.slice()
+        : (shows.shows || []);
+
+      // 5) Filter by selectedGenre if provided
+      if (requestedGenre) {
+        allShows = allShows.filter(s =>
+          Array.isArray(s.genre) && s.genre.includes(requestedGenre)
+        );
+      }
+
+      // 6) If rlOnly===true, keep only those whose genre includes "*RL"
+      if (rlOnly) {
+        allShows = allShows.filter(s =>
+          Array.isArray(s.genre) && s.genre.includes('*RL')
+        );
+      }
+
+      // 7) Render into combined grid
+      const gridEl = document.getElementById('showGrid');
+      gridEl.innerHTML = allShows.map(s => `
+        <a class="show-card" href="/show.html?showId=${s.id}">
+          <img src="${s.thumbnail}" alt="${s.title}">
+          <div class="title">${s.title}</div>
+        </a>
+      `).join('');
+
+      // 8) Make grid visible now that it's rendered
+      gridEl.style.visibility = 'visible';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOMContentLoaded fired on index');
+
+      // 1) Inject header (with “Genre” dropdown + “Anime?” switch).
+      //    When either changes, loadHeader.js dispatches "filterChanged".
+      buildHeader().then(() => {
+        window.addEventListener('filterChanged', () => {
+          refreshGrid().catch(e => console.error('refreshGrid error', e));
+        });
+      }).catch(() => { /* buildHeader failure is unlikely */ });
+
+      // 2) Kick off ticker load, hero slider + initial grid render
+      loadTickerText().catch(e => console.error('loadTickerText error', e));
+      loadHero().catch(e => console.error('loadHero error', e));
+      refreshGrid().catch(e => console.error('refreshGrid error', e));
+
+      // 3) Modal open/close handlers
+      document.querySelectorAll('.close').forEach(btn =>
+        btn.addEventListener('click', () =>
+          document.getElementById(btn.dataset.target).classList.remove('active')
+        )
+      );
+      document.getElementById('toRegister').onclick = () => {
+        document.getElementById('loginModal').classList.remove('active');
+        document.getElementById('registerModal').classList.add('active');
+      };
+      document.getElementById('toLogin').onclick = () => {
+        document.getElementById('registerModal').classList.remove('active');
+        document.getElementById('loginModal').classList.add('active');
+      };
+    });
+  </script>
+  <footer class="site-footer">
+  <p>© 2025 AnimeWatch. All rights reserved.</p>
+</footer>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title id="page-title">AnimeWatch – Show</title>
+  <link rel="stylesheet" href="/styles.css"/>
+  <style>
+    :root {
+      --bg-surface:   #1e1e1e;
+      --bg-page:      #121212;
+      --text:         #ffffff;
+      --primary:      #e53935;
+      --accent:       #b71c1c;
+      --border:       #660000;
+      /* single knob to scale the player */
+      --player-size: 1000px;
+    }
+    body {
+      margin: 0;
+      padding-top: 4rem; /* avoid header overlap */
+      background: var(--bg-page);
+      color: var(--text);
+      font-family: sans-serif;
+    }
+    /* fixed header area */
+    #site-header {
+      position: fixed; top:0; left:0; width:100%; z-index:1000;
+    }
+    /* grid layout */
+    .show-player-grid {
+      display: grid;
+      grid-template-columns: 250px 4fr 2fr;
+      gap: 1rem;
+      margin: 2rem;
+    }
+    /* seasons/episodes panel */
+    .episode-list-panel {
+      background: var(--bg-surface);
+      border-radius: 8px;
+      padding: 1rem 1rem 1rem 0;
+    }
+    .season-tabs { display: flex; margin-bottom:1rem; }
+    .season-tab {
+      flex:1; padding:.5rem;
+      background: var(--bg-surface);
+      border-bottom:1px solid var(--border);
+      text-align:center; cursor:pointer;
+      transition: background .2s, border-color .2s;
+    }
+    .season-tab:hover { background: rgba(255,255,255,0.05); }
+    .season-tab.active {
+      background: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .episode-list-panel ul {
+      list-style:none; margin:0; padding:0;
+      max-height:70vh; overflow-y:auto;
+    }
+    .episode-list-panel li {
+      padding:.5rem 1rem;
+      border-bottom:1px solid var(--border);
+      cursor:pointer;
+    }
+    .episode-list-panel li.playing { background: var(--primary); }
+    .episode-list-panel a {
+      display:block; width:100%;
+      text-decoration:none; color:inherit;
+      white-space:nowrap; overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    /* video player */
+    .player-panel .player-container {
+      position: relative;
+      width: var(--player-size);
+      max-width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 0 auto;
+    }
+    .player-panel .player-container iframe {
+      position:absolute; top:0; left:0;
+      width:100%; height:100%; border:none;
+      border-radius:8px;
+    }
+    /* show info */
+    .show-info-panel {
+      padding: 0 1rem;
+      text-align:left;
+    }
+    #showInfo img {
+      width:100%; max-width:180px;
+      border-radius:6px; margin-bottom:1rem;
+      display:block;
+    }
+    #showInfo h1 {
+      margin:0 0 .5rem;
+      color:var(--primary);
+      font-size:1.5rem;
+    }
+    #showMeta p { margin:.25rem 0; font-size:.95rem; }
+    #showMeta .meta-label {
+      font-weight:bold; color:var(--accent);
+      margin-right:.25rem;
+    }
+    /* GENRE LIST (NEW) */
+    #genreList {
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+    #genreList a {
+      display: inline-block;
+      margin: 0 8px 8px 0;
+      padding: 6px 12px;
+      background: #2196f3;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #genreList a:hover {
+      background: #1976d2;
+    }
+    /* description clamp + wrap */
+    .description {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;    /* WebKit */
+      line-clamp: 3;             /* standard */
+      overflow: hidden;
+      overflow-wrap: break-word; /* wrap long words */
+      margin: 0 0 .5rem;
+      font-size:.9rem; line-height:1.4;
+      white-space: normal;       /* allow wrapping */
+      word-break: break-word;    /* extra safety */
+    }
+    .description.expanded {
+      -webkit-line-clamp: unset;
+      line-clamp: unset;
+    }
+    .toggle-description {
+      background:none; border:none; padding:0;
+      font:inherit; color:var(--primary);
+      cursor:pointer; margin-top:.25rem;
+    }
+    /* modals */
+    .modal {
+      display:none; position:fixed; z-index:1000;
+      inset:0; background:rgba(0,0,0,0.6);
+      justify-content:center; align-items:center;
+    }
+    .modal.active { display:flex; }
+    .modal-content {
+      background:var(--bg-surface); padding:2rem;
+      border-radius:8px; width:90%; max-width:400px;
+      box-shadow:0 2px 12px rgba(0,0,0,0.7);
+      position:relative;
+    }
+    .modal-content .close {
+      position:absolute; top:.6rem; right:.8rem;
+      font-size:1.2rem; cursor:pointer; color:var(--text);
+    }
+    .modal-content h2 {
+      margin-top:0; color:var(--primary);
+      text-align:center;
+    }
+    .modal-content form input {
+      width:100%; margin-bottom:1rem; padding:.75rem;
+      border:1px solid var(--border); border-radius:4px;
+      background:#2a2a2a; color:var(--text);
+    }
+    .modal-content form button {
+      width:100%; padding:.75rem;
+      background:var(--primary); color:var(--text);
+      border:none; border-radius:4px; cursor:pointer;
+    }
+    .modal-content form button:hover {
+      background:var(--accent);
+    }
+    /* comments */
+    .comments-section { margin:2rem; }
+    .comments-section h3 {
+      margin:0 0 .5rem; color:var(--primary);
+    }
+    #comments-list {
+      list-style:none; margin:0; padding:0;
+      max-height:40vh; overflow-y:auto;
+      background:var(--bg-surface);
+      border-radius:6px;
+    }
+    #comments-list li {
+      padding:.75rem; border-bottom:1px solid var(--border);
+    }
+    #comments-list li:last-child { border-bottom:none; }
+    #comments-list li strong {
+      display:block; margin-bottom:.25rem;
+    }
+    #comment-form-container textarea {
+      width:100%; padding:.5rem;
+      background:var(--bg-surface);
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:4px;
+    }
+    #comment-form-container button {
+      margin-top:.5rem; padding:.5rem 1rem;
+      background:var(--primary);
+      color:var(--text);
+      border:none; border-radius:4px;
+      cursor:pointer;
+    }
+    #login-prompt { color:var(--text); }
+    #login-prompt a {
+      color:var(--primary);
+      text-decoration:underline;
+      cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- header/nav -->
+  <div id="site-header"></div>
+  <script src="/loadHeader.js" defer></script>
+
+  <!-- LOGIN Modal -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-target="loginModal">&times;</span>
+      <h2>Log In</h2>
+      <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Username" required/>
+        <input type="password" id="loginPassword" placeholder="Password" required/>
+        <button type="submit">Log In</button>
+      </form>
+      <p id="loginMsg"></p>
+      <p>Don’t have an account? <a href="#" id="toRegister">Register</a></p>
+    </div>
+  </div>
+
+  <!-- REGISTER Modal -->
+  <div id="registerModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-target="registerModal">&times;</span>
+      <h2>Register</h2>
+      <form id="registerForm">
+        <input type="text" id="regUsername" placeholder="Username" required/>
+        <input type="password" id="regPassword" placeholder="Password" required/>
+        <input type="password" id="regConfirm" placeholder="Confirm Password" required/>
+        <button type="submit">Sign Up</button>
+      </form>
+      <p id="regMsg"></p>
+      <p>Already have an account? <a href="#" id="toLogin">Log in</a></p>
+    </div>
+  </div>
+
+  <div class="show-player-grid">
+    <aside class="episode-list-panel">
+      <div class="season-tabs" id="seasonTabs"></div>
+      <ul id="episodes-list"></ul>
+    </aside>
+    <div class="player-panel">
+      <div class="player-container">
+        <iframe id="videoFrame" allowfullscreen frameborder="0"></iframe>
+      </div>
+    </div>
+    <aside class="show-info-panel">
+      <div id="showInfo">
+        <img id="show-thumbnail" src="" alt="Show thumbnail"/>
+        <h1 id="show-title">Loading…</h1>
+        <div id="showMeta">
+          <!-- Metadata (release date, status, type) will be injected by show.js -->
+        </div>
+
+        <!-- NEW GENRE CONTAINER -->
+        <div id="genreList"></div>
+
+        <div class="description-container">
+          <p id="show-description" class="description"></p>
+          <button class="toggle-description">Read more</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="comments-section" id="comments-section">
+    <h3>Comments</h3>
+    <ul id="comments-list"></ul>
+    <div id="comment-form-container" style="display:none;">
+      <textarea id="comment-input" placeholder="Write a comment…" rows="3"></textarea><br>
+      <button id="submit-comment">Post Comment</button>
+    </div>
+    <p id="login-prompt" style="display:none;">
+      <a href="#" id="loginLink">Log in</a> to leave a comment.
+    </p>
+  </section>
+
+  <!-- ONLY these two scripts: -->
+  <script src="/loadHeader.js" defer></script>
+  <script src="/show.js" defer></script>
+  <footer class="site-footer">
+  <p>© 2025 AnimeWatch. All rights reserved.</p>
+</footer>
+</body>
+</html>
+
+
+
+

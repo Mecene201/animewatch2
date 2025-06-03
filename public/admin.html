@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin – Manage Anime, Genres & Avatars</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    /*──────────────────────────────────────────────────────────────────────────────
+      GLOBAL & ADMIN PANEL STYLES
+    ──────────────────────────────────────────────────────────────────────────────*/
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #121212;
+      color: #eee;
+      font-family: Arial, sans-serif;
+    }
+    h2,h3,h4 { margin: 0 0 12px; color: #4caf50; }
+    .admin-container {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+      margin: 20px auto 0;
+    }
+    .panel {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+    .existing-panel { width:25%; max-height:80vh; overflow-y:auto; }
+    .genre-panel    { width:20%; max-height:80vh; overflow-y:auto; }
+    .form-panel     { width:55%; max-height:80vh; overflow-y:auto; }
+
+    /* Existing Anime list */
+    #existingList > div {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:8px 0; border-bottom:1px solid #333; font-size:0.95rem;
+    }
+    #existingList button {
+      background:#2196f3; color:#fff; border:none; padding:5px 10px;
+      border-radius:4px; cursor:pointer; font-size:0.85rem;
+      margin-left:4px;
+    }
+    #existingList button.delete-btn { background:#e53935; }
+    #existingList button:hover { opacity:0.9; }
+
+    /* Featured Anime Picker */
+    #featuredCheckboxes label {
+      display:flex;
+      align-items:center;
+      margin-bottom:6px;
+      gap:8px;
+      font-size:0.95rem;
+    }
+    #featuredCheckboxes input {
+      transform: scale(1.1);
+      margin:0;
+    }
+    #featuredCheckboxes .loading,
+    #featuredCheckboxes .error {
+      color: #bbb;
+      font-size: 0.95rem;
+    }
+
+    /* Genre Admin */
+    #genreAdminList > div {
+      display:flex; align-items:center;
+      padding:6px 0; border-bottom:1px solid #333; font-size:0.9rem;
+    }
+    #genreAdminList span { flex:1; }
+    #genreAdminList input {
+      flex:1; margin-right:6px; padding:4px 6px;
+      background:#2a2a2a;color:#fff;border:none;border-radius:4px;
+    }
+    .genre-btn {
+      background:#4caf50;color:#fff;border:none;padding:4px 8px;
+      border-radius:4px;cursor:pointer;font-size:0.85rem;margin-left:4px;
+    }
+    .genre-btn.delete { background:#e53935; }
+    .genre-btn:hover { opacity:0.9; }
+
+    /* Anime Form */
+    form input, form textarea, form select {
+      width:100%; margin-bottom:12px; padding:10px; font-size:1rem;
+      background:#2a2a2a;color:#fff;border:none;border-radius:4px;
+    }
+    form textarea { min-height:80px; resize: vertical; }
+    form button {
+      background:#4caf50;color:#fff;border:none;padding:10px 16px;
+      border-radius:4px;cursor:pointer;font-size:1rem;margin-right:8px;
+    }
+    form button#cancelEditBtn { background:#f39c12; }
+    form button:hover { opacity:0.9; }
+    #genreContainer {
+      display:none;
+      background:#2a2a2a; padding:10px; margin:8px 0 12px;
+      border-radius:4px; max-height:140px; overflow-y:auto;
+    }
+    #genreContainer label {
+      display:flex; align-items:center; gap:6px; margin-bottom:6px;
+      cursor:pointer; font-size:0.95rem; width: fit-content;
+    }
+    #genreContainer label input { margin:0; transform:scale(1.1); }
+
+    /* Seasons & Episodes container */
+    #seasonFields { margin-top:16px; }
+    #seasonsList { margin-top:12px; }
+
+    /* Movie Link field */
+    #movieLinkField {
+      display: none;
+      margin-top:16px;
+    }
+    #movieLinkField input {
+      width:100%; padding:10px; font-size:1rem;
+      background:#2a2a2a;color:#fff;border:none;border-radius:4px;
+    }
+
+    .season-item {
+      margin-bottom:16px; padding-bottom:12px;
+      border-bottom:1px solid #333;
+    }
+    .season-item h4 {
+      margin:0 0 8px; display:flex; justify-content:space-between; align-items:center;
+      font-size:1rem;
+    }
+    .season-item button.delete-btn {
+      background:#e53935;color:#fff;border:none;padding:4px 8px;
+      border-radius:4px;cursor:pointer;font-size:0.85rem;
+    }
+    .toggle-ep-btn {
+      background:#03a9f4;color:#fff;border:none;padding:6px 10px;
+      border-radius:4px;cursor:pointer;font-size:0.9rem;
+    }
+    .episode-form {
+      display:none; background:#2a2a2a; padding:10px;
+      border-radius:4px; margin-bottom:8px;
+    }
+    .episode-form input {
+      width:calc(33% - 8px); margin-right:8px; padding:6px;
+      background:#1e1e1e;color:#fff;border:none;border-radius:4px;
+      font-size:0.9rem;
+    }
+    .episode-form button { padding:6px 10px; font-size:0.9rem; }
+    .season-item ul { margin-top:6px; padding-left:20px; font-size:0.9rem; }
+    .season-item ul li { margin-bottom:4px; }
+
+    #message { margin-top:12px; color:#4caf50; font-size:0.95rem; }
+
+    /*──────────────────────────────────────────────────────────────────────────────
+      MODAL STYLES
+    ──────────────────────────────────────────────────────────────────────────────*/
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: #1e1e1e;
+      padding: 2rem;
+      border-radius: 8px;
+      width: 90%; max-width: 400px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.7);
+      position: relative;
+    }
+    .modal-content .close {
+      position: absolute;
+      right: 0.8rem; top: 0.6rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    /*──────────────────────────────────────────────────────────────────────────────
+      AVATAR LIBRARY STYLES
+    ──────────────────────────────────────────────────────────────────────────────*/
+    #avatarPanel {
+      margin:20px auto; max-width:1200px;
+    }
+    #addAvatarForm {
+      display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px;
+    }
+    #addAvatarForm input,
+    #addAvatarForm label,
+    #addAvatarForm button {
+      background:#2a2a2a; color:#fff;
+      border:1px solid #444; border-radius:4px;
+      padding:8px; font-size:0.9rem;
+    }
+    #avatarPanel table {
+      width:100%; border-collapse:collapse;
+    }
+    #avatarPanel th,
+    #avatarPanel td {
+      padding:8px; border-bottom:1px solid #333;
+      text-align:left; vertical-align:middle;
+    }
+    #avatarPanel img {
+      width:50px; height:50px; border-radius:50%;
+      object-fit:cover;
+    }
+    .save, .delete {
+      padding:6px 10px; border:none; border-radius:4px;
+      cursor:pointer; margin-left:6px; font-size:0.9rem;
+    }
+    .save { background:#4caf50; color:#fff; }
+    .delete { background:#e53935; color:#fff; }
+
+    /*──────────────────────────────────────────────────────────────────────────────
+      ADJUST USER COINS STYLES
+    ──────────────────────────────────────────────────────────────────────────────*/
+    #coinAdjustPanel {
+      margin:20px auto; max-width:400px;
+    }
+    #coinAdjustPanel h3 {
+      margin-top:0; color:#4caf50;
+    }
+    #coinAdjustPanel input,
+    #coinAdjustPanel button {
+      width:100%; padding:10px; margin-bottom:12px;
+      background:#2a2a2a; color:#fff;
+      border:1px solid #444; border-radius:4px; font-size:1rem;
+    }
+    #coinAdjustPanel button {
+      background:#4caf50; cursor:pointer; border:none;
+    }
+
+    /*──────────────────────────────────────────────────────────────────────────────
+      TICKER MANAGEMENT STYLES
+    ──────────────────────────────────────────────────────────────────────────────*/
+    #ticker-management {
+      margin: 20px auto; max-width: 1200px;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+    #ticker-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    #ticker-table th, #ticker-table td {
+      padding: 8px;
+      border-bottom: 1px solid #444;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+    #ticker-table a {
+      color: #4caf50;
+      text-decoration: none;
+    }
+    #ticker-table button {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    #ticker-table button.edit-btn {
+      background: #2196f3;
+      color: #fff;
+      margin-right: 6px;
+    }
+    #ticker-table button.delete-btn {
+      background: #f44336;
+      color: #fff;
+    }
+    #ticker-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 600px;
+    }
+    #ticker-form input[type="text"],
+    #ticker-form input[type="url"] {
+      width: 100%;
+      padding: 6px;
+      background: #1e1e1e;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 4px;
+    }
+    #ticker-form button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    #ticker-save-btn {
+      background: #4caf50;
+      color: #fff;
+      align-self: flex-start;
+    }
+    #ticker-cancel-btn {
+      background: #f44336;
+      color: #fff;
+      align-self: flex-start;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header/nav -->
+  <div id="site-header"></div>
+  <script src="/loadHeader.js" defer></script>
+
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-target="loginModal">&times;</span>
+      <h2>Log In</h2>
+      <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Username" required />
+        <input type="password" id="loginPassword" placeholder="Password" required />
+        <button type="submit">Log In</button>
+      </form>
+      <p id="loginMsg"></p>
+      <p>Don’t have an account? <a href="#" id="toRegister">Register</a></p>
+    </div>
+  </div>
+
+  <!-- REGISTER MODAL -->
+  <div id="registerModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-target="registerModal">&times;</span>
+      <h2>Register</h2>
+      <form id="registerForm">
+        <input type="text" id="regUsername" placeholder="Username" required />
+        <input type="password" id="regPassword" placeholder="Password" required />
+        <input type="password" id="regConfirm" placeholder="Confirm Password" required />
+        <button type="submit">Sign Up</button>
+      </form>
+      <p id="regMsg"></p>
+      <p>Already have an account? <a href="#" id="toLogin">Log In</a></p>
+    </div>
+  </div>
+
+  <!-- Featured Anime Picker Panel -->
+  <div class="panel" style="max-width:1200px; margin:20px auto;">
+    <h2>Homepage Featured Anime</h2>
+    <div id="featuredCheckboxes" style="max-height:200px; overflow-y:auto;">
+      <div class="loading">Loading...</div>
+    </div>
+    <button id="saveFeatured" class="btn">Save Featured</button>
+    <p id="featuredMsg" class="message"></p>
+  </div>
+
+  <!-- TICKER MANAGEMENT SECTION -->
+  <section id="ticker-management">
+    <h2>Ticker Management</h2>
+
+    <!-- 1) TABLE: show existing ticker items -->
+    <table id="ticker-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Message</th>
+          <th>Link</th>
+          <th>Created At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be injected here by JavaScript -->
+      </tbody>
+    </table>
+
+    <!-- 2) FORM: add or edit a ticker item -->
+    <form id="ticker-form">
+      <input type="hidden" id="ticker-id" value="" />
+      <label>
+        <span style="display: block; margin-bottom: 4px; color: #eee;">Message:</span>
+        <input
+          type="text"
+          id="ticker-message"
+          placeholder="Enter ticker message"
+          required
+        />
+      </label>
+      <label>
+        <span style="display: block; margin-bottom: 4px; color: #eee;">Link (optional):</span>
+        <input
+          type="url"
+          id="ticker-link"
+          placeholder="https://example.com"
+        />
+      </label>
+      <button
+        type="submit"
+        id="ticker-save-btn"
+      >
+        Add Ticker
+      </button>
+      <button
+        type="button"
+        id="ticker-cancel-btn"
+      >
+        Cancel Edit
+      </button>
+    </form>
+  </section>
+
+  <!-- MAIN ADMIN PANELS -->
+  <div class="admin-container">
+    <!-- Existing Anime -->
+    <div class="panel existing-panel">
+      <h2>Existing Anime</h2>
+      <div id="existingList"></div>
+    </div>
+
+    <!-- Manage Genres -->
+    <div class="panel genre-panel">
+      <h3>Manage Genres</h3>
+      <div id="genreAdminList"></div>
+      <input type="text" id="newGenreName" placeholder="New genre name">
+      <button id="addGenreBtn" class="genre-btn">Add</button>
+    </div>
+
+    <!-- Add/Edit Anime -->
+    <div class="panel form-panel">
+      <h2 id="formTitle">Add New Anime</h2>
+      <form id="animeForm">
+        <input type="hidden" id="editId">
+        <input type="text"   id="title"       placeholder="Title" required>
+        <input type="date"   id="releaseDate" required>
+        <textarea id="description" placeholder="Description" required></textarea>
+
+        <div class="row" style="gap:8px;">
+          <select id="status" required>
+            <option value="">Select Status</option>
+            <option>Ongoing</option>
+            <option>Completed</option>
+          </select>
+          <select id="type" required>
+            <option value="">Select Type</option>
+            <option>Show</option>
+            <option>Movie</option>
+          </select>
+        </div>
+
+        <h3>
+          Genres
+          <button type="button" id="toggleGenreBtn" class="genre-btn">Show Genres</button>
+        </h3>
+        <div id="genreContainer"></div>
+
+        <input type="text" id="thumbnail" placeholder="Thumbnail URL" required>
+        <input type="text" id="bannerUrl"  placeholder="Hero Banner URL (optional)">
+
+        <!-- Seasons & Episodes -->
+        <div id="seasonFields">
+          <h3>Seasons & Episodes</h3>
+          <div class="row" style="gap:8px;">
+            <input type="number" id="seasonNumber" placeholder="Season #" min="1">
+            <input type="text"   id="seasonTitle"  placeholder="Season Title">
+            <button type="button" id="addSeasonBtn" class="btn-inline">Add Season</button>
+          </div>
+          <div id="seasonsList"></div>
+        </div>
+
+        <!-- Movie Link -->
+        <div id="movieLinkField">
+          <h3>Movie Link</h3>
+          <input type="text" id="movieLink" placeholder="Movie URL">
+        </div>
+
+        <button type="submit" id="submitBtn">Add Anime</button>
+        <button type="button" id="cancelEditBtn" style="display:none;">Cancel</button>
+      </form>
+      <p id="message"></p>
+    </div>
+  </div>
+
+  <!-- Avatar Library Panel -->
+  <div id="avatarPanel" class="panel">
+    <h2>Avatar Library</h2>
+    <form id="addAvatarForm">
+      <input type="text"   id="newAvatarUrl"  placeholder="Image URL" required>
+      <input type="text"   id="newAvatarName" placeholder="Name (optional)">
+      <input type="number" id="newAvatarCost" placeholder="Cost (coins)" min="0">
+      <label><input type="checkbox" id="newAvatarPremium"> Premium</label>
+      <button type="submit">Add Avatar</button>
+    </form>
+    <table>
+      <thead>
+        <tr><th>Preview</th><th>Name</th><th>Cost</th><th>Premium?</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="avatarsTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Coin Adjust Panel -->
+  <div id="coinAdjustPanel" class="panel">
+    <h3>Adjust User Coins</h3>
+    <input type="text"   id="adjustUsername" placeholder="Username">
+    <input type="number" id="adjustAmount"   placeholder="Coins to credit" min="0">
+    <button id="adjustCoinsBtn">Credit Coins</button>
+    <p id="coinAdjustMsg"></p>
+  </div>
+
+  <script>
+    // ─── Header/Auth & Featured logic ─────────────────────────────────────────
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('toRegister').onclick = e => { e.preventDefault(); openModal('registerModal'); };
+      document.getElementById('toLogin').onclick    = e => { e.preventDefault(); openModal('loginModal');    };
+
+      loadFeaturedCheckboxes();      // Populate featured anime checkboxes
+      loadExisting();                // Populate existing anime list
+      loadGenreAdmin();              // Populate genre admin list
+      loadGenresForForm();           // Populate genre checkboxes in form
+      updateFormType();              // Show/hide fields based on type
+      loadAvatars();                 // Populate avatar library
+
+      // Toggle “Show Genres” button
+      const toggleBtn = document.getElementById('toggleGenreBtn');
+      toggleBtn.addEventListener('click', () => {
+        const container = document.getElementById('genreContainer');
+        if (container.style.display === 'block') {
+          container.style.display = 'none';
+        } else {
+          container.style.display = 'block';
+        }
+      });
+    });
+
+    document.addEventListener('click', e => {
+      if (e.target.classList.contains('close')) closeModal(e.target.dataset.target);
+      if (e.target.classList.contains('modal')) closeModal(e.target.id);
+    });
+
+    document.getElementById('loginForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const u = document.getElementById('loginUsername').value.trim();
+      const p = document.getElementById('loginPassword').value;
+      const res = await fetch('/api/auth/login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:u,password:p})
+      });
+      const d = await res.json();
+      document.getElementById('loginMsg').innerText = d.message;
+      if (res.ok) location.reload();
+    };
+
+    document.getElementById('registerForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const u = document.getElementById('regUsername').value.trim();
+      const p = document.getElementById('regPassword').value;
+      const c = document.getElementById('regConfirm').value;
+      if (p !== c) {
+        document.getElementById('regMsg').innerText = 'Passwords must match';
+        return;
+      }
+      const res = await fetch('/api/auth/register', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:u,password:p})
+      });
+      const d = await res.json();
+      document.getElementById('regMsg').innerText = d.message;
+      if (res.ok) location.reload();
+    };
+
+    // ─── Save Featured – now reloads checkboxes on success ────────────────────
+    document.getElementById('saveFeatured').onclick = async () => {
+      const checkboxes = Array.from(document.querySelectorAll('#featuredCheckboxes input:checked'));
+      const selectedIds = checkboxes.map(cb => +cb.value);
+
+      const res = await fetch('/api/admin/featured', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ animeIds: selectedIds })
+      });
+      const data = await res.json();
+      const msgEl = document.getElementById('featuredMsg');
+
+      if (data.success) {
+        msgEl.style.color = '#4caf50';
+        msgEl.innerText = 'Featured list updated';
+        // Refresh checkboxes to reflect saved state
+        loadFeaturedCheckboxes();
+      } else {
+        msgEl.style.color = '#e53935';
+        msgEl.innerText = 'Error saving featured list';
+      }
+      // Clear message after a few seconds
+      setTimeout(() => { msgEl.innerText = ''; }, 3000);
+    };
+
+    // ─── Load Featured Anime Checkboxes ─────────────────────────────────────────
+    async function loadFeaturedCheckboxes() {
+      const container = document.getElementById('featuredCheckboxes');
+      container.innerHTML = '<div class="loading">Loading...</div>';
+      let animeList = [];
+      let featuredIds = [];
+
+      try {
+        // Fetch all anime/shows
+        const animeListRes = await fetch('/api/admin/anime');
+        if (!animeListRes.ok) throw new Error('Failed to fetch anime list');
+        animeList = await animeListRes.json();
+      } catch (err) {
+        console.error(err);
+        container.innerHTML = '<div class="error">Error loading anime list</div>';
+        return;
+      }
+
+      try {
+        // Attempt to fetch current featured selection
+        const featuredRes = await fetch('/api/admin/featured');
+        if (featuredRes.ok) {
+          const featuredData = await featuredRes.json();
+          // Determine featured IDs from possible response shapes
+          if (Array.isArray(featuredData)) {
+            featuredIds = featuredData;
+          } else if (Array.isArray(featuredData.featuredIds)) {
+            featuredIds = featuredData.featuredIds;
+          } else if (Array.isArray(featuredData.animeIds)) {
+            featuredIds = featuredData.animeIds;
+          } else if (Array.isArray(featuredData.featured)) {
+            featuredIds = featuredData.featured;
+          } else if (Array.isArray(featuredData.ids)) {
+            featuredIds = featuredData.ids;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load featured IDs, proceeding with none checked');
+        // Leave featuredIds empty
+      }
+
+      // Now render checkboxes
+      container.innerHTML = '';
+      animeList.forEach(a => {
+        const label = document.createElement('label');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = a.id;
+        checkbox.checked = featuredIds.includes(a.id);
+
+        const span = document.createElement('span');
+        span.innerText = a.title;
+
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        container.appendChild(label);
+      });
+    }
+
+    // ─── Admin Panels Logic ─────────────────────────────────────────────────
+    let seasons = [], isEditing = false, editId = null, editingSeason = null, editingEp = null, editingGenre = null;
+    const typeSelect = document.getElementById('type'),
+          seasonFields = document.getElementById('seasonFields'),
+          movieLinkField = document.getElementById('movieLinkField');
+
+    function updateFormType() {
+      if (typeSelect.value === 'Movie') {
+        seasonFields.style.display = 'none';
+        movieLinkField.style.display = 'block';
+      } else {
+        seasonFields.style.display = 'block';
+        movieLinkField.style.display = 'none';
+      }
+    }
+    typeSelect.addEventListener('change', updateFormType);
+
+    async function loadExisting() {
+      const list = await (await fetch('/api/admin/anime')).json();
+      const c = document.getElementById('existingList');
+      c.innerHTML = '';
+      list.forEach(a => {
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <span>${a.title}</span>
+          <button type="button" onclick="startEdit(${a.id})">Edit</button>
+          <button type="button" class="delete-btn" onclick="deleteShow(${a.id})">Delete</button>
+        `;
+        c.appendChild(row);
+      });
+    }
+
+    async function deleteShow(id) {
+      if (!confirm('Are you sure?')) return;
+      const res = await fetch(`/api/admin/anime/${id}`, { method:'DELETE' });
+      if (res.ok) {
+        loadExisting();
+        loadFeaturedCheckboxes();
+      } else {
+        alert((await res.json()).message);
+      }
+    }
+
+    async function startEdit(id) {
+      const res = await fetch(`/api/admin/anime/${id}`);
+      const { show, seasons: loaded = [] } = await res.json();
+      isEditing = true; editId = id;
+      document.getElementById('formTitle').textContent = 'Edit Anime';
+      document.getElementById('editId').value = show.id;
+      document.getElementById('title').value = show.title;
+      document.getElementById('releaseDate').value = show.releaseDate;
+      document.getElementById('description').value = show.description;
+      document.getElementById('status').value = show.status;
+      document.getElementById('type').value = show.type;
+      document.getElementById('thumbnail').value = show.thumbnail;
+      document.getElementById('bannerUrl').value = show.bannerUrl || '';
+      document.getElementById('movieLink').value = show.movieUrl || '';
+      document.getElementById('submitBtn').textContent = 'Update Anime';
+      document.getElementById('cancelEditBtn').style.display = 'inline-block';
+      document.querySelectorAll('#genreContainer input').forEach(cb => {
+        cb.checked = show.genre?.includes(cb.value);
+      });
+      seasons = loaded;
+      renderSeasons();
+      updateFormType();
+    }
+
+    document.getElementById('cancelEditBtn').onclick = () => {
+      isEditing = false; editId = null; seasons = [];
+      document.getElementById('animeForm').reset();
+      document.getElementById('formTitle').textContent = 'Add New Anime';
+      document.getElementById('submitBtn').textContent = 'Add Anime';
+      document.getElementById('cancelEditBtn').style.display = 'none';
+      document.querySelectorAll('#genreContainer input').forEach(cb => cb.checked = false);
+      renderSeasons();
+      updateFormType();
+      document.getElementById('message').textContent = '';
+    };
+
+    document.getElementById('animeForm').onsubmit = async e => {
+      e.preventDefault();
+      const selectedGenres = Array.from(document.querySelectorAll('#genreContainer input:checked')).map(cb => cb.value);
+      const typeVal = document.getElementById('type').value;
+      const payload = {
+        title:       document.getElementById('title').value.trim(),
+        releaseDate: document.getElementById('releaseDate').value,
+        description: document.getElementById('description').value.trim(),
+        status:      document.getElementById('status').value,
+        type:        typeVal,
+        genre:       selectedGenres,
+        thumbnail:   document.getElementById('thumbnail').value.trim(),
+        bannerUrl:   document.getElementById('bannerUrl').value.trim(),
+        seasons:     typeVal === 'Movie' ? [] : seasons,
+        movieUrl:    typeVal === 'Movie' ? document.getElementById('movieLink').value.trim() : undefined
+      };
+      const url    = isEditing ? `/api/admin/anime/${editId}` : '/api/admin/anime';
+      const method = isEditing ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      document.getElementById('message').innerText = data.message;
+      if (res.ok) {
+        document.getElementById('animeForm').reset();
+        seasons = [];
+        renderSeasons();
+        updateFormType();
+        document.getElementById('cancelEditBtn').style.display = 'none';
+        document.getElementById('formTitle').textContent = 'Add New Anime';
+        document.getElementById('submitBtn').textContent = 'Add Anime';
+        loadExisting();
+        loadGenreAdmin();
+        loadGenresForForm();
+        loadFeaturedCheckboxes(); // Refresh featured list after add/update
+      }
+    };
+
+    // ─── Genre Admin ─────────────────────────────────────────────────────────
+    async function loadGenreAdmin() {
+      const genres = [];
+      const list = document.getElementById('genreAdminList');
+
+      list.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/admin/genres');
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          genres.push(...data);
+        } else {
+          return; // unexpected shape
+        }
+      } catch {
+        return;
+      }
+
+      genres.forEach(g => {
+        const div = document.createElement('div');
+        if (editingGenre === g) {
+          div.innerHTML = `
+            <input id="editGenreInput" value="${g}">
+            <button class="genre-btn" onclick="saveGenre()">Save</button>
+            <button class="genre-btn" onclick="cancelEditGenre()">Cancel</button>
+          `;
+        } else {
+          div.innerHTML = `
+            <span>${g}</span>
+            <button class="genre-btn" onclick="beginEditGenre('${g}')">Edit</button>
+            <button class="genre-btn delete" onclick="deleteGenre('${g}')">Delete</button>
+          `;
+        }
+        list.appendChild(div);
+      });
+    }
+
+    function beginEditGenre(oldName) { editingGenre = oldName; loadGenreAdmin(); }
+    async function saveGenre() {
+      const newName = document.getElementById('editGenreInput').value.trim();
+      if (!newName) return alert('Name cannot be blank');
+      await fetch(`/api/admin/genres/${encodeURIComponent(editingGenre)}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ genre: newName })
+      });
+      editingGenre = null;
+      loadGenreAdmin(); loadGenresForForm();
+    }
+    function cancelEditGenre() { editingGenre = null; loadGenreAdmin(); }
+    async function deleteGenre(name) {
+      if (!confirm(`Delete genre "${name}"?`)) return;
+      await fetch(`/api/admin/genres/${encodeURIComponent(name)}`, { method: 'DELETE' });
+      loadGenreAdmin(); loadGenresForForm();
+    }
+    document.getElementById('addGenreBtn').onclick = async () => {
+      const n = document.getElementById('newGenreName').value.trim();
+      if (!n) return alert('Enter a genre name');
+      await fetch('/api/admin/genres', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ genre: n })
+      });
+      document.getElementById('newGenreName').value = '';
+      loadGenreAdmin(); loadGenresForForm();
+    };
+
+    async function loadGenresForForm() {
+      const container = document.getElementById('genreContainer');
+      container.innerHTML = '';
+      let genres = [];
+
+      try {
+        const res = await fetch('/api/admin/genres');
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          genres = data;
+        } else {
+          return; // unexpected shape
+        }
+      } catch {
+        return;
+      }
+
+      genres.forEach(g => {
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox" value="${g}"> <span>${g}</span>`;
+        container.appendChild(label);
+      });
+    }
+
+    // ─── Seasons & Episodes (always sorted by episodeNumber) ─────────────────
+    function renderSeasons() {
+      // Sort seasons by seasonNumber
+      seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
+
+      const list = document.getElementById('seasonsList');
+      list.innerHTML = '';
+
+      seasons.forEach((s, sIndex) => {
+        // Sort episodes by episodeNumber
+        s.episodes.sort((a, b) => a.episodeNumber - b.episodeNumber);
+
+        const div = document.createElement('div');
+        div.className = 'season-item';
+        div.innerHTML = `
+          <h4>
+            Season ${s.seasonNumber}: ${s.seasonTitle}
+            <button type="button" class="delete-btn" onclick="deleteSeason(${sIndex})">Delete Season</button>
+          </h4>
+          <div class="episode-form-container">
+            <button type="button" class="toggle-ep-btn" onclick="toggleEpisodeForm(${sIndex})">New Episode</button>
+            <div class="episode-form" id="episode-form-${sIndex}">
+              <input type="number" placeholder="Episode #" id="epNum-${sIndex}">
+              <input type="text" placeholder="Title" id="epTitle-${sIndex}">
+              <input type="text" placeholder="URL" id="epUrl-${sIndex}">
+              <button type="button" onclick="addEpisode(${sIndex})">Add</button>
+            </div>
+          </div>
+          <ul id="episodeList-${sIndex}"></ul>
+        `;
+        list.appendChild(div);
+
+        s.episodes.forEach((ep, eIndex) => {
+          const ul = div.querySelector(`#episodeList-${sIndex}`);
+          const li = document.createElement('li');
+          li.innerHTML = `
+            Ep ${ep.episodeNumber}: ${ep.episodeTitle}
+            <button type="button" class="toggle-ep-btn" onclick="editEpisode(${sIndex},${eIndex})">Edit</button>
+            <button type="button" class="delete-btn" onclick="deleteEpisode(${sIndex},${eIndex})">Delete</button>
+          `;
+          ul.appendChild(li);
+        });
+      });
+    }
+
+    function toggleEpisodeForm(i) {
+      const f = document.getElementById(`episode-form-${i}`);
+      f.style.display = f.style.display==='block' ? 'none' : 'block';
+    }
+    function deleteSeason(i) {
+      seasons.splice(i, 1);
+      renderSeasons();
+    }
+    function deleteEpisode(si, ei) {
+      seasons[si].episodes.splice(ei, 1);
+      renderSeasons();
+    }
+
+    document.getElementById('addSeasonBtn').onclick = () => {
+      const num   = +document.getElementById('seasonNumber').value;
+      const title = document.getElementById('seasonTitle').value.trim();
+      if (!num || !title) return alert('Fill season number & title');
+      seasons.push({ seasonNumber: num, seasonTitle: title, episodes: [] });
+      renderSeasons();
+    };
+
+    function addEpisode(i) {
+      const n = +document.getElementById(`epNum-${i}`).value;
+      const t = document.getElementById(`epTitle-${i}`).value.trim();
+      const u = document.getElementById(`epUrl-${i}`).value.trim();
+      if (!n || !t || !u) return alert('Fill all episode fields');
+      if (editingSeason === i && editingEp != null) {
+        seasons[i].episodes[editingEp] = { episodeNumber: n, episodeTitle: t, videoUrl: u };
+        editingSeason = null; editingEp = null;
+        document.getElementById(`episode-form-${i}`).querySelector('button').textContent = 'Add';
+      } else {
+        seasons[i].episodes.push({ episodeNumber: n, episodeTitle: t, videoUrl: u });
+      }
+      ['epNum','epTitle','epUrl'].forEach(id => document.getElementById(`${id}-${i}`).value = '');
+      renderSeasons();
+    }
+
+    function editEpisode(si, ei) {
+      editingSeason = si; editingEp = ei;
+      const ep = seasons[si].episodes[ei];
+      const f  = document.getElementById(`episode-form-${si}`);
+      document.getElementById(`epNum-${si}`).value   = ep.episodeNumber;
+      document.getElementById(`epTitle-${si}`).value = ep.episodeTitle;
+      document.getElementById(`epUrl-${si}`).value   = ep.videoUrl;
+      f.style.display='block'; f.querySelector('button').textContent='Save';
+    }
+
+    // ─── Avatar Library ───────────────────────────────────────────────────────
+    async function loadAvatars() {
+      const tbody = document.getElementById('avatarsTable');
+      const { avatars } = await (await fetch('/api/admin/avatars')).json();
+      tbody.innerHTML = avatars.map(a => `
+        <tr data-id="${a.id}">
+          <td><img src="${a.url}" alt=""></td>
+          <td><input class="edit-name" value="${a.name||''}"></td>
+          <td><input class="edit-cost" type="number" value="${a.cost}" min="0" style="width:60px"></td>
+          <td><input class="edit-premium" type="checkbox"${a.isPremium?' checked':''}></td>
+          <td>
+            <button class="save">Save</button>
+            <button class="delete">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+      tbody.querySelectorAll('.save').forEach(btn => btn.onclick = async () => {
+        const tr = btn.closest('tr'), id = tr.dataset.id;
+        const name = tr.querySelector('.edit-name').value.trim();
+        const cost = parseInt(tr.querySelector('.edit-cost').value, 10) || 0;
+        const isPremium = tr.querySelector('.edit-premium').checked;
+        await fetch(`/api/admin/avatars/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, cost, isPremium })
+        });
+        loadAvatars();
+      });
+      tbody.querySelectorAll('.delete').forEach(btn => btn.onclick = async () => {
+        const id = btn.closest('tr').dataset.id;
+        if (!confirm('Delete this avatar?')) return;
+        await fetch(`/api/admin/avatars/${id}`, { method: 'DELETE' });
+        loadAvatars();
+      });
+    }
+
+    document.getElementById('addAvatarForm').onsubmit = async e => {
+      e.preventDefault();
+      const url       = document.getElementById('newAvatarUrl').value.trim();
+      const name      = document.getElementById('newAvatarName').value.trim();
+      const cost      = parseInt(document.getElementById('newAvatarCost').value, 10) || 0;
+      const isPremium = document.getElementById('newAvatarPremium').checked;
+      await fetch('/api/admin/avatars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, name, cost, isPremium })
+      });
+      e.target.reset();
+      loadAvatars();
+    };
+
+    // ─── Adjust User Coins ─────────────────────────────────────────────────────
+    document.getElementById('adjustCoinsBtn').onclick = async () => {
+      const username = document.getElementById('adjustUsername').value.trim();
+      const amount   = parseInt(document.getElementById('adjustAmount').value, 10);
+      const msgEl    = document.getElementById('coinAdjustMsg');
+      if (!username || isNaN(amount)) {
+        msgEl.style.color = '#e53935';
+        msgEl.textContent = 'Enter valid username & amount';
+        return;
+      }
+      const res = await fetch('/api/admin/users/coins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, amount })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        msgEl.style.color = '#4caf50';
+        msgEl.textContent = `${data.username} now has ${data.newBalance} coins`;
+        document.getElementById('adjustUsername').value = '';
+        document.getElementById('adjustAmount').value = '';
+      } else {
+        msgEl.style.color = '#e53935';
+        msgEl.textContent = data.message;
+      }
+    };
+
+    // ─── TICKER MANAGEMENT SCRIPT ──────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      const tableBody      = document.querySelector('#ticker-table tbody');
+      const form           = document.getElementById('ticker-form');
+      const inputId        = document.getElementById('ticker-id');
+      const inputMessage   = document.getElementById('ticker-message');
+      const inputLink      = document.getElementById('ticker-link');
+      const saveBtn        = document.getElementById('ticker-save-btn');
+      const cancelBtn      = document.getElementById('ticker-cancel-btn');
+
+      // ─── 1) Fetch & render all ticker items ──────────────────────────────────
+      async function loadTickerItems() {
+        try {
+          const res = await fetch('/api/ticker');
+          const data = await res.json();
+          const items = data.ticker || [];
+
+          // Clear out existing rows
+          tableBody.innerHTML = '';
+
+          // Insert one <tr> per ticker item
+          items.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${item.id}</td>
+              <td>${item.message}</td>
+              <td>
+                ${item.link ? `<a href="${item.link}" target="_blank">Link</a>` : ''}
+              </td>
+              <td>${item.created_at}</td>
+              <td>
+                <button data-id="${item.id}" class="edit-btn">Edit</button>
+                <button data-id="${item.id}" class="delete-btn">Delete</button>
+              </td>
+            `;
+            tableBody.appendChild(tr);
+          });
+
+          // Attach click‐handlers for Edit/Delete after rows exist
+          attachRowEventListeners();
+        } catch (e) {
+          console.error('Error loading ticker items:', e);
+        }
+      }
+
+      // ─── 2) Attach Edit/Delete click handlers ─────────────────────────────────
+      function attachRowEventListeners() {
+        // “Edit” buttons
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            try {
+              const res = await fetch('/api/ticker');
+              const data = await res.json();
+              const item = data.ticker.find(x => x.id === Number(id));
+              if (!item) return;
+
+              // Fill form fields and toggle buttons
+              inputId.value      = item.id;
+              inputMessage.value = item.message;
+              inputLink.value    = item.link || '';
+              saveBtn.textContent   = 'Update Ticker';
+              cancelBtn.style.display = 'inline-block';
+            } catch (e) {
+              console.error('Error fetching item for edit:', e);
+            }
+          });
+        });
+
+        // “Delete” buttons
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            if (!confirm('Are you sure you want to delete this ticker item?')) return;
+            try {
+              const res = await fetch(`/api/ticker/${id}`, { method: 'DELETE' });
+              if (res.ok) {
+                loadTickerItems();
+              } else {
+                console.error('Failed to delete ticker item');
+              }
+            } catch (e) {
+              console.error('Error deleting ticker item:', e);
+            }
+          });
+        });
+      }
+
+      // ─── 3) Handle form submission (create or update) ───────────────────────────
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const id      = inputId.value.trim();
+        const message = inputMessage.value.trim();
+        const link    = inputLink.value.trim() || null;
+
+        if (!message) {
+          alert('Message cannot be empty.');
+          return;
+        }
+
+        try {
+          let res;
+          if (id) {
+            // EDIT: send PUT to /api/ticker/:id
+            res = await fetch(`/api/ticker/${id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message, link })
+            });
+          } else {
+            // CREATE: send POST to /api/ticker
+            res = await fetch('/api/ticker', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message, link })
+            });
+          }
+
+          if (res.ok) {
+            // Reset form & reload table
+            inputId.value = '';
+            inputMessage.value = '';
+            inputLink.value = '';
+            saveBtn.textContent = 'Add Ticker';
+            cancelBtn.style.display = 'none';
+            loadTickerItems();
+          } else {
+            const errData = await res.json();
+            alert('Error: ' + (errData.error || 'Unknown error'));
+          }
+        } catch (e) {
+          console.error('Error saving ticker item:', e);
+        }
+      });
+
+      // ─── 4) Cancel “edit” mode ─────────────────────────────────────────────────
+      cancelBtn.addEventListener('click', () => {
+        inputId.value = '';
+        inputMessage.value = '';
+        inputLink.value = '';
+        saveBtn.textContent = 'Add Ticker';
+        cancelBtn.style.display = 'none';
+      });
+
+      // Initial load
+      loadTickerItems();
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+

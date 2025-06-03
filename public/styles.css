@@ -1,0 +1,655 @@
+/*──────────────────────────────────────────────────────────────────────────────
+   styles.css — Black Header, Dark Grey Page & Red Search Bar (with Logo support)
+──────────────────────────────────────────────────────────────────────────────*/
+
+/*──────────────────────────────────────────────────────────────────────────────
+  COLOR PALETTE & VARIABLES
+──────────────────────────────────────────────────────────────────────────────*/
+:root {
+  --header-bg:  #000000;  /* pure black header */
+  --page-bg:    #121212;  /* dark grey page background */
+  --surface:    #1e1e1e;  /* panels/cards */
+  --primary:    #e53935;  /* bright red for search button */
+  --accent:     #b71c1c;  /* darker red hover */
+  --text:       #ffffff;  /* white text */
+  --border:     #660000;  /* deep maroon borders */
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  GLOBAL
+──────────────────────────────────────────────────────────────────────────────*/
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  HEADER / NAVIGATION
+──────────────────────────────────────────────────────────────────────────────*/
+.site-header {
+  background: var(--header-bg);
+  padding: 0.75rem 0;    /* vertical padding for breathing room */
+}
+.site-header .container {
+  width: 100%;           /* full‐width container */
+  max-width: none;       /* ignore any max-width limit */
+  margin: 0;             /* flush to viewport edges */
+  padding: 0 8rem 0 0;   /* heavier right padding to pull nav toward center */
+  display: flex;
+  align-items: center;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+}
+.site-header .logo {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+  text-decoration: none;
+  color: var(--text) !important;
+}
+.site-header nav {
+  margin-left: auto;
+}
+.site-header nav a {
+  color: var(--text);
+  text-decoration: none;
+  margin-left: 1rem;
+  font-weight: 500;
+}
+.site-header nav a:hover {
+  text-decoration: underline;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  LOGO IMAGE & TEXT
+──────────────────────────────────────────────────────────────────────────────*/
+/* logo image */
+.site-header .logo img {
+  display: block;
+  height: 44px;
+  width: auto;
+}
+
+/* logo text */
+.site-header .logo .logo-text {
+  margin-left: 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  SEARCH BAR IN HEADER
+──────────────────────────────────────────────────────────────────────────────*/
+.search {
+  display: flex;
+  align-items: center;
+}
+.search input {
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 4px 0 0 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+.search button {
+  padding: 0.4rem 0.8rem;
+  background: var(--primary);
+  color: var(--text);
+  border: none;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.search button:hover {
+  background: var(--accent);
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  SHOW GRID
+──────────────────────────────────────────────────────────────────────────────*/
+.show-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.show-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+}
+.show-card img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  background: #111;
+}
+.show-card .title {
+  padding: 0.5rem;
+  text-align: center;
+  flex-grow: 1;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  UTILITIES
+──────────────────────────────────────────────────────────────────────────────*/
+.container {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.hidden {
+  display: none !important;
+}
+
+.show-card img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  display: block;
+  border: none !important;
+
+  /* fade-out mask at bottom */
+  mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+
+/* ─── Comments / Replies ───────────────────────────────────────────────────── */
+.comment-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.comments-section {
+  margin: 2rem;
+}
+
+#comments-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.comment-item {
+  display: flex;
+  background: var(--bg-surface);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+}
+
+.comment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 1rem;
+  flex-shrink: 0;
+  border: 2px solid var(--primary);
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.comment-username {
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.comment-time {
+  font-size: 0.8rem;
+  color: #ccc;
+}
+
+.comment-edited {
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.comment-body {
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.comment-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text);
+  padding: 0;
+}
+
+.comment-actions button:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+/* Reply & edit forms */
+.reply-form,
+.edit-form {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reply-form textarea,
+.edit-form textarea {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--bg-page);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.reply-form button,
+.edit-form button {
+  align-self: flex-start;
+  padding: 0.4rem 0.8rem;
+  background: var(--primary);
+  color: var(--text);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.reply-form .cancel-reply,
+.edit-form .cancel-edit {
+  background: var(--accent);
+}
+
+.reply-form button:hover,
+.edit-form button:hover {
+  opacity: 0.9;
+}
+
+/* Limit overall comment-height with scroll */
+.comments-section {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+/* Icon-only buttons, cleaned up */
+.comment-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+}
+.comment-actions button:hover {
+  color: var(--primary);
+}
+
+/* Tiny “+X replies” link */
+.toggle-replies {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--primary);
+  text-decoration: none;
+  margin: 0.25em 0;
+  cursor: pointer;
+}
+.toggle-replies:hover {
+  text-decoration: underline;
+}
+
+/* greyed‐out emoji buttons */
+.like-btn, .dislike-btn {
+  font-size: 1.2rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: #888;              /* light grey */
+  padding: 0.2rem 0.5rem;
+  transition: color .2s, background .2s;
+  cursor: pointer;
+  margin-right: 0.5rem;
+}
+.like-btn:hover, .dislike-btn:hover {
+  color: var(--primary);
+  background: var(--bg-page);
+}
+/* darker grey when already liked/disliked */
+.like-btn.liked {
+  color: #555;
+}
+.dislike-btn.disliked {
+  color: #555;
+}
+
+.comments-section {
+  width: 69%;          /* 25% less wide */
+  margin: 2rem auto;   /* center horizontally */
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+
+/* Clear red borders in comments */
+.comment-item {
+  border: none;                 /* no red line */
+  background: var(--bg-surface);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  margin-bottom: 1rem;
+}
+
+/* Remove red divider lines between comments */
+#comments-list li,
+.comments-section li {
+  border: none !important;
+}
+
+.carousel-container {
+  position: relative;
+  width: 100%;
+  height: 60vh;               /* adjust to match your hero height */
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  Comment Item & Buttons
+─────────────────────────────────────────────────────────────────────────────*/
+.comment-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: .75rem;
+  border-bottom: 1px solid var(--border);
+}
+.comment-item:last-child {
+  border-bottom: none;
+}
+.comment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.comment-content {
+  flex: 1;
+}
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: .25rem;
+}
+.comment-username {
+  font-weight: bold;
+  color: var(--primary);
+}
+.comment-time {
+  font-size: .85rem;
+  color: var(--text);
+}
+.comment-text {
+  margin: 0 0 .5rem;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  Comment Action Buttons (Reply / 👍 / 👎 / More…)
+─────────────────────────────────────────────────────────────────────────────*/
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.comment-actions button,
+.comment-actions .reply-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.comment-actions button:hover,
+.comment-actions .reply-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* if you add a “more” button in future */
+.comment-actions .more-btn {
+  font-size: 1rem;         /* icon size */
+  padding: 4px;
+}
+
+.comment-actions .more-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+
+.carousel-container .slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  display: none;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.carousel-container .slide:first-child {
+  display: block;
+}
+
+.slide-title {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  margin: 0;
+  color: #fff;
+  font-size: 2.5rem;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+/* 1) Pin the header and clear its own BG */
+#site-header {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  background: none !important;  /* override any solid BG */
+  z-index: 1000;
+}
+
+/* 2) Make sure all direct child containers are transparent too */
+#site-header > * {
+  background: transparent !important;
+}
+
+/* 3) Create the fade overlay behind your header content */
+#site-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.8) 0%,
+    rgba(0,0,0,0.2) 60%,
+    rgba(0,0,0,0)   100%
+  );
+  z-index: -1; /* behind the inner content */
+}
+
+/* 4) Push page content down so it isn’t hidden under the fixed header */
+body {
+  padding-top: 4rem; /* match your header’s height */
+}
+
+/* styles.css */
+
+/* Container for search input + genre select + button */
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* small gap between input, select, and button */
+}
+
+/* Tweak the input to take up the majority of the width */
+.search-container input[type="text"] {
+  flex: 1;           /* grows to fill available space */
+  padding: 0.5rem;   /* a bit of internal padding */
+  font-size: 1rem;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+}
+
+/* Style the genre <select> */
+.search-container select {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+}
+
+/* Style the Search button */
+.search-container button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #e53935;
+  color: #fff;
+  cursor: pointer;
+}
+
+.search-container button:hover {
+  background: #d32f2f;
+}
+
+/* ─── Updated Episode List Styles ───────────────────────────────────────────── */
+.episode-list-panel {
+  background: var(--bg-surface);
+  border-radius: 8px;
+  padding: 0.5rem 0; /* slightly less vertical padding to fit more */
+}
+
+/* Season tabs remain the same */
+.season-tabs { display: flex; margin-bottom: 1rem; }
+.season-tab {
+  flex: 1;
+  padding: .5rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.season-tab:hover { background: rgba(255, 255, 255, 0.05); }
+.season-tab.active {
+  background: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* Make the UL fill height, allow vertical scroll if many eps */
+.episode-list-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Each LI gets more padding, a border‐radius, and a subtle hover */
+.episode-list-panel li {
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+}
+.episode-list-panel li:last-child {
+  border-bottom: none;
+}
+.episode-list-panel li:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* The “playing” episode remains highlighted with primary color */
+.episode-list-panel li.playing {
+  background: var(--primary);
+}
+
+/* Link → full width, no decorations, slightly larger text */
+.episode-list-panel a {
+  display: block;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* On hover, let the title wrap onto multiple lines (so you can read it) */
+.episode-list-panel li:hover a {
+  white-space: normal;     /* allow wrapping */
+  overflow: visible;       /* show all text */
+  text-overflow: clip;
+}
+
+.site-footer {
+  text-align: center;
+  padding: 1rem 0;
+  background: var(--bg-surface); /* or #1e1e1e */
+  color: var(--text);            /* or #ffffff */
+  font-size: 0.9rem;
+  position: relative;            /* ensures it sits at the bottom of the content */
+}
+
+
+
